@@ -1,3 +1,9 @@
+"""
+Copyright (c) 2026-present Ailrid.
+Licensed under the Apache License, Version 2.0.
+Project: Virid
+"""
+
 from typing import Any, Callable
 from virid.core import EventMessage, ViridApp, MessageWriter, ExecuteHookContext
 from contextlib import contextmanager

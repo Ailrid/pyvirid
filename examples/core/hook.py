@@ -5,7 +5,6 @@ Project: Virid
 """
 
 from dataclasses import dataclass
-from site import venv
 from typing import Callable
 from virid.core import (
     create_virid,
