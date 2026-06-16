@@ -3,6 +3,7 @@ Copyright (c) 2026-present Ailrid.
 Licensed under the Apache License, Version 2.0.
 Project: Virid
 """
+
 import time
 from typing import Callable, Type
 from .interface import (
@@ -82,7 +83,7 @@ class Dispatcher:
     def __init__(self):
         self.stage = Stage()
         self.event_queue: list[EventMessage] = []
-        self.dirty_signal_types: set[Type[SingleMessage]] = set()
+        self.dirty_signal_types: dict[Type[SingleMessage], None] = {}
 
         self.is_running = False
         self.internal_depth = 0
@@ -139,7 +140,7 @@ class Dispatcher:
         self.stage.push(message)
         # 根据消息类型放进不同的池子里
         if isinstance(message, SingleMessage):
-            self.dirty_signal_types.add(type(message))
+            self.dirty_signal_types[type(message)] = None
         elif isinstance(message, EventMessage):
             self.event_queue.append(message)
 
@@ -198,7 +199,7 @@ class Dispatcher:
     def collect_tasks(
         self,
         event_snapshot: list[EventMessage],
-        signal_snapshot: set[Type[SingleMessage]],
+        signal_snapshot: list[Type[SingleMessage]],
         system_task_map: dict[Type[BaseMessage], list[SystemTask]],
     ):
         tasks: list[ExecutionTask] = []
@@ -255,9 +256,9 @@ class Dispatcher:
                     + f"MessageData: {task.message} \n",
                 )
 
-    def prepare_snapshot(self):
+    def prepare_snapshot(self) -> tuple[list[type[SingleMessage]], list[EventMessage]]:
         self.stage.flip()
-        signal_snapshot = set(self.dirty_signal_types)
+        signal_snapshot = list(self.dirty_signal_types.keys())
         event_snapshot = self.event_queue[:]
         self.dirty_signal_types.clear()
         self.event_queue.clear()
