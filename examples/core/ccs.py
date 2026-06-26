@@ -61,6 +61,10 @@ def set_value(message: SetValueMessage, counter: Counter) -> None:
     MessageWriter.info(f"Set Value: {counter.value}")
 
 
+app.register(increment)
+app.register(decrement)
+app.register(set_value)
+
 # Due to inheriting from SingleMessage, these two messages will be merged within a micro task queue
 IncreaseMessage.send()
 IncreaseMessage.send()
@@ -84,4 +88,4 @@ app.tick()
 #  ✔ [Virid Info] Global Info Caught:
 #   Details: Decrement: 1000
 #  ✔ [Virid Info] Global Info Caught:
-#   Details: Decrement: 999 
+#   Details: Decrement: 999

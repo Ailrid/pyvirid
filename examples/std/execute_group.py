@@ -65,6 +65,12 @@ def will_error(message: WillErrorMessage) -> None:
     raise Exception("Error")
 
 
+app.register(increase_A)
+app.register(increase_B)
+app.register(decrease)
+app.register(will_error)
+
+
 def print_result(success: bool) -> None:
     if success:
         print("[ExecuteGroup] Success")

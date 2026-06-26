@@ -45,6 +45,8 @@ def increase_A(counter: Counter) -> None:
 def increase_B(counter: Counter) -> None:
     counter.time_B += 1
     print("B :>> ", counter.time_B)
+app.register(increase_A)
+app.register(increase_B)
 
 
 def after_tick(_context) -> None:

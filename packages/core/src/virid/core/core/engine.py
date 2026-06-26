@@ -3,6 +3,7 @@ Copyright (c) 2026-present Ailrid.
 Licensed under the Apache License, Version 2.0.
 Project: Virid
 """
+
 from typing import Callable, Type
 from .message import BaseMessage
 from .io import MessageWriter, activate_publisher
@@ -12,9 +13,9 @@ from .interface import TickHook, ExecuteHook, Middleware
 
 
 class Engine:
-    def __init__(self):
+    def __init__(self, max_depth):
         self.registry = Registry()
-        self.dispatcher = Dispatcher()
+        self.dispatcher = Dispatcher(max_depth)
         self.middlewares: list[Middleware] = []
         activate_publisher(self)
 

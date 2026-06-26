@@ -116,6 +116,9 @@ def increment(counter: Counter) -> None:
 def decrement(counter: Counter) -> None:
     counter.value -= 1
 
+app.register(increment)
+app.register(decrement)
+
 
 IncreaseMessage.send()
 IncreaseMessage.send()
@@ -142,15 +145,14 @@ app.tick()
 # -----------After Tick Hook Triggered-----------
 
 # message :DecreaseMessage()
-# context: ExecuteHookContext(tick=0, context={'params': [<class '__main__.Counter'>], 'message_type': <class '__main__.DecreaseMessage'>, 'method_name': 'decrement', 'original_method': <function decrement at 0x7f1b470f4cc0>}, payload={}) 
+# context: ExecuteHookContext(tick=0, context={'params': [<class '__main__.Counter'>], 'message_type': <class '__main__.DecreaseMessage'>, 'method_name': 'decrement', 'original_method': <function decrement at 0x7f1b470f4cc0>}, payload={})
 # success: True
 # -----------Before Tick Hook Triggered-----------
 
 # message :[IncreaseMessage(), IncreaseMessage()]
-# context: ExecuteHookContext(tick=0, context={'params': [<class '__main__.Counter'>], 'message_type': <class '__main__.IncreaseMessage'>, 'method_name': 'increment', 'original_method': <function increment at 0x7f1b470f4ae0>}, payload={}) 
+# context: ExecuteHookContext(tick=0, context={'params': [<class '__main__.Counter'>], 'message_type': <class '__main__.IncreaseMessage'>, 'method_name': 'increment', 'original_method': <function increment at 0x7f1b470f4ae0>}, payload={})
 # success: True
 # -----------After Tick Hook Triggered-----------
 # context: TickHookContext(tick=0, time=1781522997.6060486, payload={'payload': 'something'})
 
 # payload: something
-

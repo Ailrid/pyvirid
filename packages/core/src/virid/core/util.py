@@ -4,17 +4,19 @@ Licensed under the Apache License, Version 2.0.
 Project: Virid
 """
 
+from virid.core.app import ViridApp
+
 from .core.message import ErrorMessage, InfoMessage, WarnMessage
-from .core.interface import SystemContext
 from logging import getLogger
 import logging
+from .decorators import system
 
-switch = True
+toggle_key = True
 
 
-def toggle_utils(val: bool) -> None:
-    global switch
-    switch = val
+def toggle_log(enable_logging: bool) -> None:
+    global toggle_key
+    toggle_key = enable_logging
 
 
 class ViridFormatter(logging.Formatter):
@@ -62,50 +64,29 @@ handler.setFormatter(ViridFormatter("%(message)s"))
 logger = getLogger(__name__)
 
 
+@system(priority=-9999)
 def error(message: ErrorMessage) -> None:
-    if switch is False:
+    if not toggle_key:
         return
     logger.error(message.error, extra={"msg_type": "error"})
     logger.error(message.context, extra={"msg_type": "context"})
 
 
-error.system_context: SystemContext = {  # type: ignore
-    "params": [ErrorMessage],
-    "message_type": ErrorMessage,
-    "method_name": error.__name__,
-    "original_method": error,
-}
-
-
+@system(priority=-9999)
 def info(message: InfoMessage) -> None:
-    if switch is False:
+    if not toggle_key:
         return
     logger.info(message.context)
 
 
-info.system_context: SystemContext = {  # type: ignore
-    "params": [InfoMessage],
-    "message_type": InfoMessage,
-    "method_name": info.__name__,
-    "original_method": info,
-}
-
-
+@system(priority=-9999)
 def warn(message: WarnMessage) -> None:
-    if switch is False:
+    if not toggle_key:
         return
     logger.warning(message.context)
 
 
-warn.system_context: SystemContext = {  # type: ignore
-    "params": [WarnMessage],
-    "message_type": WarnMessage,
-    "method_name": warn.__name__,
-    "original_method": warn,
-}
-
-
-def register_base_handlers(virid) -> None:
-    virid.register(ErrorMessage, error)
-    virid.register(InfoMessage, info)
-    virid.register(WarnMessage, warn)
+def register_base_handlers(virid: ViridApp) -> None:
+    virid.register(error)
+    virid.register(info)
+    virid.register(warn)

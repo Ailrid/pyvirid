@@ -80,7 +80,8 @@ class ExecutionTask:
 
 
 class Dispatcher:
-    def __init__(self):
+    def __init__(self, max_depth):
+        self.max_depth = max_depth
         self.stage = Stage()
         self.event_queue: list[EventMessage] = []
         self.dirty_signal_types: dict[Type[SingleMessage], None] = {}
@@ -144,64 +145,6 @@ class Dispatcher:
         elif isinstance(message, EventMessage):
             self.event_queue.append(message)
 
-    # def tick(self, system_task_map: dict[Type[BaseMessage], list[SystemTask]]):
-
-    #     if self.is_running or (
-    #         len(self.dirty_signal_types) == 0 and len(self.event_queue) == 0
-    #     ):
-    #         return
-
-    #     if self.internal_depth == 0:
-    #         self.tick_payload = {}
-    #         self.execute_hooks(self.before_tick_hooks)
-
-    #     if self.internal_depth > 1000:
-    #         self.internal_depth = 0
-    #         self.dirty_signal_types.clear()
-    #         self.event_queue.clear()
-    #         self.stage.reset()
-    #         MessageWriter.error(
-    #             RuntimeError(
-    #                 "[Virid Dispatcher] Internal depth exceeded 1000. Possible infinite loop detected. 💥."
-    #             ),
-    #         )
-    #         return
-
-    #     self.is_running = True
-    #     self.internal_depth += 1
-
-    #     # 正式开始任务
-    #     signal_snapshot = set()
-    #     event_snapshot = list()
-
-    #     try:
-    #         signal_snapshot, event_snapshot = self.prepare_snapshot()
-    #         tasks = self.collect_tasks(
-    #             event_snapshot,
-    #             signal_snapshot,
-    #             system_task_map,
-    #         )
-    #         self.execute_tasks(tasks)
-
-    #     except Exception as e:
-    #         MessageWriter.error(e)
-    #     except KeyboardInterrupt as e:
-    #         self.clear()
-    #         self.is_running = False
-    #         self.internal_depth = 0
-    #         self.tick_counter += 1
-    #         self.execute_hooks(self.after_tick_hooks)
-    #         raise e
-
-    #     finally:
-    #         self.clear()
-    #         self.is_running = False
-    #         if len(self.dirty_signal_types) > 0 or len(self.event_queue) > 0:
-    #             self.tick(system_task_map)
-    #         else:
-    #             self.internal_depth = 0
-    #             self.execute_hooks(self.after_tick_hooks)
-    #             self.tick_counter += 1
     def tick(self, system_task_map: dict[Type[BaseMessage], list[SystemTask]]):
         # 如果已经在运行，或者没有消息，直接返回
         if self.is_running or (
@@ -219,12 +162,12 @@ class Dispatcher:
         try:
             # 用 while 循环代替递归，消化这一个 tick 衍生出的所有消息
             while len(self.dirty_signal_types) > 0 or len(self.event_queue) > 0:
-                if self.internal_depth > 1000:
+                if self.internal_depth > self.max_depth:
                     self.dirty_signal_types.clear()
                     self.event_queue.clear()
                     self.stage.reset()
                     print(
-                        "[Virid Dispatcher] Internal depth exceeded 1000. Possible infinite loop detected. 💥."
+                        f"[Virid Dispatcher] Internal depth exceeded {self.max_depth}. Possible infinite loop detected. The dispatcher will stop processing this tick."
                     )
                     break  # 超过1000层，强制中断循环
 
@@ -243,10 +186,6 @@ class Dispatcher:
                     MessageWriter.error(e)
                 finally:
                     self.clear()
-
-        except KeyboardInterrupt as e:
-            self.clear()
-            raise e
         finally:
             # 当所有层级的消息都处理完毕（或触发异常退出）后，恢复状态
             self.is_running = False
@@ -309,7 +248,7 @@ class Dispatcher:
                 MessageWriter.error(
                     e,
                     f"[virid Dispatcher]: System Error. \n"
-                    + f"SystemLocation: {task.system_fn.__name__} \n"
+                    + f"SystemName: {task.system_fn.system_context['method_name']} \n"  # type: ignore
                     + f"MessageName: {type(task.message).__name__} \n"
                     + f"MessageData: {task.message} \n",
                 )

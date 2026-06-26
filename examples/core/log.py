@@ -18,7 +18,7 @@ from virid.core import (
 
 # This example demonstrates how to replace the default logging system with a custom logging system
 # The embedded logging system can be turned off in the settings
-app = create_virid(enable_logging=False)
+app = create_virid(enable_logging=True)
 
 
 @component()
@@ -56,6 +56,11 @@ def test(message: TestMessage) -> None:
     raise Exception("Test")
 
 
+app.register(info)
+app.register(warn)
+app.register(error)
+app.register(test)
+
 MessageWriter.info("This is a info message")
 MessageWriter.warn("This is a warn message")
 MessageWriter.error(Exception("Error Text"), "This is a error message")
@@ -70,8 +75,7 @@ app.tick()
 # Error: Error Text
 # Error: This is a error message
 # Error: Test
-# Error: [virid Dispatcher]: System Error. 
-# SystemLocation: test 
-# MessageName: list 
-# MessageData: [TestMessage()] 
-
+# Error: [virid Dispatcher]: System Error.
+# SystemLocation: test
+# MessageName: list
+# MessageData: [TestMessage()]
