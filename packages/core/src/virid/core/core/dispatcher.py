@@ -144,57 +144,115 @@ class Dispatcher:
         elif isinstance(message, EventMessage):
             self.event_queue.append(message)
 
-    def tick(self, system_task_map: dict[Type[BaseMessage], list[SystemTask]]):
+    # def tick(self, system_task_map: dict[Type[BaseMessage], list[SystemTask]]):
 
+    #     if self.is_running or (
+    #         len(self.dirty_signal_types) == 0 and len(self.event_queue) == 0
+    #     ):
+    #         return
+
+    #     if self.internal_depth == 0:
+    #         self.tick_payload = {}
+    #         self.execute_hooks(self.before_tick_hooks)
+
+    #     if self.internal_depth > 1000:
+    #         self.internal_depth = 0
+    #         self.dirty_signal_types.clear()
+    #         self.event_queue.clear()
+    #         self.stage.reset()
+    #         MessageWriter.error(
+    #             RuntimeError(
+    #                 "[Virid Dispatcher] Internal depth exceeded 1000. Possible infinite loop detected. 💥."
+    #             ),
+    #         )
+    #         return
+
+    #     self.is_running = True
+    #     self.internal_depth += 1
+
+    #     # 正式开始任务
+    #     signal_snapshot = set()
+    #     event_snapshot = list()
+
+    #     try:
+    #         signal_snapshot, event_snapshot = self.prepare_snapshot()
+    #         tasks = self.collect_tasks(
+    #             event_snapshot,
+    #             signal_snapshot,
+    #             system_task_map,
+    #         )
+    #         self.execute_tasks(tasks)
+
+    #     except Exception as e:
+    #         MessageWriter.error(e)
+    #     except KeyboardInterrupt as e:
+    #         self.clear()
+    #         self.is_running = False
+    #         self.internal_depth = 0
+    #         self.tick_counter += 1
+    #         self.execute_hooks(self.after_tick_hooks)
+    #         raise e
+
+    #     finally:
+    #         self.clear()
+    #         self.is_running = False
+    #         if len(self.dirty_signal_types) > 0 or len(self.event_queue) > 0:
+    #             self.tick(system_task_map)
+    #         else:
+    #             self.internal_depth = 0
+    #             self.execute_hooks(self.after_tick_hooks)
+    #             self.tick_counter += 1
+    def tick(self, system_task_map: dict[Type[BaseMessage], list[SystemTask]]):
+        # 如果已经在运行，或者没有消息，直接返回
         if self.is_running or (
             len(self.dirty_signal_types) == 0 and len(self.event_queue) == 0
         ):
             return
 
+        self.is_running = True
+
+        # 只在最外层触发 before_tick_hooks
         if self.internal_depth == 0:
             self.tick_payload = {}
             self.execute_hooks(self.before_tick_hooks)
 
-        if self.internal_depth > 100:
-            self.internal_depth = 0
-            self.dirty_signal_types.clear()
-            self.event_queue.clear()
-            self.stage.reset()
-            MessageWriter.error(
-                RuntimeError(
-                    "[Virid Dispatcher] Internal depth exceeded 100. Possible infinite loop detected. 💥."
-                ),
-            )
-            return
-
-        self.is_running = True
-        self.internal_depth += 1
-
-        # 正式开始任务
-        signal_snapshot = set()
-        event_snapshot = list()
-
         try:
-            signal_snapshot, event_snapshot = self.prepare_snapshot()
-            tasks = self.collect_tasks(
-                event_snapshot,
-                signal_snapshot,
-                system_task_map,
-            )
-            self.execute_tasks(tasks)
+            # 用 while 循环代替递归，消化这一个 tick 衍生出的所有消息
+            while len(self.dirty_signal_types) > 0 or len(self.event_queue) > 0:
+                if self.internal_depth > 1000:
+                    self.dirty_signal_types.clear()
+                    self.event_queue.clear()
+                    self.stage.reset()
+                    print(
+                        "[Virid Dispatcher] Internal depth exceeded 1000. Possible infinite loop detected. 💥."
+                    )
+                    break  # 超过1000层，强制中断循环
 
-        except Exception as e:
-            MessageWriter.error(e)
+                self.internal_depth += 1
 
-        finally:
+                # 正式开始任务
+                try:
+                    signal_snapshot, event_snapshot = self.prepare_snapshot()
+                    tasks = self.collect_tasks(
+                        event_snapshot,
+                        signal_snapshot,
+                        system_task_map,
+                    )
+                    self.execute_tasks(tasks)
+                except Exception as e:
+                    MessageWriter.error(e)
+                finally:
+                    self.clear()
+
+        except KeyboardInterrupt as e:
             self.clear()
+            raise e
+        finally:
+            # 当所有层级的消息都处理完毕（或触发异常退出）后，恢复状态
             self.is_running = False
-            if len(self.dirty_signal_types) > 0 or len(self.event_queue) > 0:
-                self.tick(system_task_map)
-            else:
-                self.internal_depth = 0
-                self.execute_hooks(self.after_tick_hooks)
-                self.tick_counter += 1
+            self.internal_depth = 0
+            self.execute_hooks(self.after_tick_hooks)
+            self.tick_counter += 1
 
     def collect_tasks(
         self,
