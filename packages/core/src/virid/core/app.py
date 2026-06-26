@@ -11,7 +11,6 @@ from typing import Type, Callable, TypeVar, overload, Any, Protocol
 from .core.message import BaseMessage, EventMessage, SingleMessage
 from .core.interface import TickHook, ExecuteHook, Middleware
 from .core.io import MessageWriter
-from functools import wraps
 
 
 def handle_result(res: Any) -> None:

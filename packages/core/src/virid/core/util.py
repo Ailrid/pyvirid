@@ -16,7 +16,7 @@ toggle_key = True
 
 def toggle_log(enable_logging: bool) -> None:
     global toggle_key
-    toggle_key = enable_logging
+    toggle_key = not enable_logging
 
 
 class ViridFormatter(logging.Formatter):
@@ -66,6 +66,7 @@ logger = getLogger(__name__)
 
 @system(priority=-9999)
 def error(message: ErrorMessage) -> None:
+    global toggle_key
     if not toggle_key:
         return
     logger.error(message.error, extra={"msg_type": "error"})
@@ -74,6 +75,7 @@ def error(message: ErrorMessage) -> None:
 
 @system(priority=-9999)
 def info(message: InfoMessage) -> None:
+    global toggle_key
     if not toggle_key:
         return
     logger.info(message.context)
@@ -81,6 +83,7 @@ def info(message: InfoMessage) -> None:
 
 @system(priority=-9999)
 def warn(message: WarnMessage) -> None:
+    global toggle_key
     if not toggle_key:
         return
     logger.warning(message.context)
