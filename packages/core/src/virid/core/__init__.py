@@ -7,7 +7,7 @@ Project: Virid
 from .app import ViridApp
 from .core import *
 from .decorators import *
-from .util import register_base_handlers, toggle_log
+from .util import register_base_handlers, Logger
 from .app import ViridApp
 
 
@@ -17,5 +17,5 @@ def create_virid(
 ) -> ViridApp:
     virid_app = ViridApp(max_depth)
     register_base_handlers(virid_app)
-    toggle_log(enable_logging)
+    virid_app.get(Logger).enable_logging = enable_logging
     return virid_app

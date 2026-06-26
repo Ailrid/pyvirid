@@ -5,18 +5,10 @@ Project: Virid
 """
 
 from virid.core.app import ViridApp
-
 from .core.message import ErrorMessage, InfoMessage, WarnMessage
 from logging import getLogger
 import logging
-from .decorators import system
-
-toggle_key = True
-
-
-def toggle_log(enable_logging: bool) -> None:
-    global toggle_key
-    toggle_key = not enable_logging
+from .decorators import system, component
 
 
 class ViridFormatter(logging.Formatter):
@@ -58,38 +50,41 @@ class ViridFormatter(logging.Formatter):
         return super().format(record)
 
 
-logging.basicConfig(level=logging.INFO)
-handler = logging.root.handlers[0]
-handler.setFormatter(ViridFormatter("%(message)s"))
-logger = getLogger(__name__)
+@component()
+class Logger:
+    def __init__(self):
+        logging.basicConfig(level=logging.INFO)
+        handler = logging.root.handlers[0]
+        handler.setFormatter(ViridFormatter("%(message)s"))
+        logger = getLogger(__name__)
+        self.enable_logging = True
+        self.writer = logger
 
 
 @system(priority=-9999)
-def error(message: ErrorMessage) -> None:
-    global toggle_key
-    if not toggle_key:
+def error(message: ErrorMessage, logger: Logger) -> None:
+    if not logger.enable_logging:
         return
-    logger.error(message.error, extra={"msg_type": "error"})
-    logger.error(message.context, extra={"msg_type": "context"})
+    logger.writer.error(message.error, extra={"msg_type": "error"})
+    logger.writer.error(message.context, extra={"msg_type": "context"})
 
 
 @system(priority=-9999)
-def info(message: InfoMessage) -> None:
-    global toggle_key
-    if not toggle_key:
+def info(message: InfoMessage, logger: Logger) -> None:
+    if not logger.enable_logging:
         return
-    logger.info(message.context)
+    logger.writer.info(message.context)
 
 
 @system(priority=-9999)
-def warn(message: WarnMessage) -> None:
-    global toggle_key
-    if not toggle_key:
+def warn(message: WarnMessage, logger: Logger) -> None:
+    if not logger.enable_logging:
         return
-    logger.warning(message.context)
+    logger.writer.warning(message.context)
 
 
 def register_base_handlers(virid: ViridApp) -> None:
+    virid.bind(Logger)
     virid.register(error)
     virid.register(info)
     virid.register(warn)

@@ -18,7 +18,7 @@ from virid.core import (
 
 # This example demonstrates how to replace the default logging system with a custom logging system
 # The embedded logging system can be turned off in the settings
-app = create_virid(enable_logging=True)
+app = create_virid(enable_logging=False)
 
 
 @component()
