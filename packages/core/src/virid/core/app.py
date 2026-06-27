@@ -11,6 +11,12 @@ from typing import Type, Callable, TypeVar, overload, Any, Protocol
 from .core.message import BaseMessage, EventMessage, SingleMessage
 from .core.interface import TickHook, ExecuteHook, Middleware
 from .core.io import MessageWriter
+from .decorators import component
+
+T = TypeVar("T")
+F = TypeVar("F", bound=EventMessage, contravariant=True)
+H = TypeVar("H", bound=SingleMessage, contravariant=True)
+O = TypeVar("O", contravariant=True)
 
 
 def handle_result(res: Any) -> None:
@@ -29,49 +35,54 @@ def handle_result(res: Any) -> None:
             )
 
 
-T = TypeVar("T")
-F = TypeVar("F", bound=EventMessage, contravariant=True)
-H = TypeVar("H", bound=SingleMessage, contravariant=True)
-O = TypeVar("O", contravariant=True)
-
-
 class ViridPlugin(Protocol[O]):
     name: str
 
     def install(self, app: ViridApp, options: O) -> None: ...
 
 
+@component()
 class ViridApp:
     def __init__(self, max_depth: int):
         self.engine = Engine(max_depth)
         self.container = Container()
-        self.activate: list[Callable] = [lambda x: x]
         self.installed_plugins = set()
 
     def on_activate(self, activate: Callable, front: bool = False) -> None:
-        if front:
-            self.activate.insert(0, activate)
-        else:
-            self.activate.append(activate)
+        self.container.add_activate_hook(activate, front)
 
     def get(self, identifier: Type[T]) -> T:
-        return self.container.get(identifier, self.activate)
+        """Get a Controller or Component instance"""
 
-    def bind(self, identifier, singleton=True):
-        self.container.bind(identifier, singleton)
+        return self.container.get(identifier)
+
+    def bind(self, identifier: Type[Any]):
+        """Statically bind a component"""
+
+        self.container.bind(identifier)
+
+    def spawn(self, instance: object):
+        """Dynamically bind a component"""
+
+        self.container.spawn(instance)
 
     def tick(self):
         self.engine.tick()
 
-    # def register(
-    #     self, message_class: Type[BaseMessage], system_fn: Callable, priority: int = 0
-    # ):
-    #     self.engine.register(message_class, system_fn, priority)
-
     def register(
         self,
         func: Callable,
-    ):
+    ) -> Callable[[], None]:
+        """Register a system and return the uninstall function"""
+        if getattr(func, "system_context", None) is None:
+            raise ValueError(
+                f"[Virid System] Cannot Register System: System {func.__name__} must be registered with @System decorator!"
+            )
+        if getattr(func, "system_config", None) is None:
+            raise ValueError(
+                f"[Virid System] Cannot Register System: System {func.__name__} must be registered with @System decorator!"
+            )
+
         system_context = func.system_context  # type: ignore
         system_config = func.system_config  # type: ignore
 
@@ -149,11 +160,9 @@ class ViridApp:
             # 解析并处理返回值（支持链式反应）
             handle_result(result)
 
-            return result
-
         wrapped_system.system_context = system_context  # type: ignore
 
-        self.engine.register(final_message_type, wrapped_system, priority)
+        return self.engine.register(final_message_type, wrapped_system, priority)
 
     def on_before_tick(self, hook: TickHook, front: bool = False):
         self.engine.on_before_tick(hook, front)

@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-NEW_VERSION="0.1.6"
+NEW_VERSION="0.2.0"
 
 
 sed -i "s/^version = \"[0-9.]*\"/version = \"${NEW_VERSION}\"/" packages/core/pyproject.toml

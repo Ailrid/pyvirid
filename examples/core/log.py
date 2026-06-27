@@ -15,6 +15,7 @@ from virid.core import (
     component,
     MessageWriter,
 )
+from virid.core.util import ViridLogger
 
 # This example demonstrates how to replace the default logging system with a custom logging system
 # The embedded logging system can be turned off in the settings
@@ -34,7 +35,9 @@ class TestMessage(SingleMessage): ...
 
 
 @system()
-def info(message: InfoMessage) -> None:
+def info(message: InfoMessage, logger: ViridLogger) -> None:
+    # You can get the built-in logger and manually print the logs
+    logger.writer.info(message.context)
     print(f"Info: {message.context}")
 
 

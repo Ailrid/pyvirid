@@ -169,7 +169,7 @@ class Dispatcher:
                     print(
                         f"[Virid Dispatcher] Internal depth exceeded {self.max_depth}. Possible infinite loop detected. The dispatcher will stop processing this tick."
                     )
-                    break  # 超过1000层，强制中断循环
+                    break  # 超过强制中断循环
 
                 self.internal_depth += 1
 

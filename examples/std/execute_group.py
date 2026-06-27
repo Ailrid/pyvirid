@@ -86,6 +86,8 @@ def print_result(success: bool) -> None:
 def main():
 
     with execute_block(group_id="first", callback=print_result):
+        # One very important thing here is that each message here is a separate micro tick,
+        # which will result in an increase in depth by one layer
         IncreaseAMessage.send()
         IncreaseBMessage.send()
         IncreaseAMessage.send()

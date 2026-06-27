@@ -3,6 +3,7 @@ Copyright (c) 2026-present Ailrid.
 Licensed under the Apache License, Version 2.0.
 Project: Virid
 """
+
 from typing import Type, Callable
 from .message import BaseMessage
 from .io import MessageWriter
@@ -30,11 +31,10 @@ class Registry:
 
         # 检查重复注册
         if system_fn in systems:
-            func_name = getattr(system_fn, "__name__", "Anonymous")
             MessageWriter.warn(
-                f"[virid Warn] System function is already registered for this message type!\n"
+                f"[Virid Warn] System function is already registered for this message type!\n"
                 f"Message Class: {message_class.__name__}\n"
-                f"Function Name: {func_name}\n"
+                f"Function Name: {system_fn.system_context.method_name}\n"  # type: ignore
             )
             return lambda: None
 

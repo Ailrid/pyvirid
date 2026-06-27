@@ -19,10 +19,7 @@ def system(
     singleton: bool = True,
 ):
     """
-    系统装饰器
-    :param message_type: 监听的消息类型 (可选，如果不传会自动从参数的类型注解推断)
-    :param priority: 优先级，数值越大越早执行
-    :param singleton: 是否为单例模式。True 传入单条消息；False 传入整个消息列表
+    Decorator for system function
     """
 
     # 提前校验 decorator 参数
@@ -122,8 +119,20 @@ def system(
 
 
 def component():
+    """Decorator for component"""
+
     def bind_component(cls):
         cls.__virid_component__ = True
         return cls
 
     return bind_component
+
+
+def controller():
+    """Decorator for controller"""
+
+    def bind_controller(cls):
+        cls.__virid_controller__ = True
+        return cls
+
+    return bind_controller
